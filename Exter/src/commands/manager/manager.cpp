@@ -15,7 +15,7 @@ namespace commands
 		bool pressed{};
 		for (auto& k : m_keys)
 		{
-			if (GetForegroundWindow() == pointers::g_hwnd)
+			if (!pointers::g_hwnd || GetForegroundWindow() == pointers::g_hwnd)
 			{
 				if (GetAsyncKeyState(k) & 0x1)
 				{

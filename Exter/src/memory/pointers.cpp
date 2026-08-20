@@ -48,6 +48,11 @@ namespace pointers
 		g_threadId = scan("TI", "8B 15 ? ? ? ? 48 8B 05 ? ? ? ? FF C2 89 15 ? ? ? ? 48 8B 0C F8").lea().as<decltype(g_threadId)>();
 		g_threadCount = scan("TC", "FF 0D ? ? ? ? 48 8B D9").lea().as<decltype(g_threadCount)>();
 		g_hwnd = FindWindowA("grcWindow", nullptr);
+		if (!g_hwnd)
+		{
+			g_hwnd = GetForegroundWindow();
+			LOG(Warn, "Failed to find grcWindow; using foreground window fallback")
+		}
 		LOG(Info, "{}/{} pointers found. ({} failed)", g_foundSigCount, g_totalSigCount, g_failedSigCount);
 	}
 }
