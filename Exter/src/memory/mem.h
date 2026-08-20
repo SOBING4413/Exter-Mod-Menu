@@ -13,59 +13,59 @@ public:
 	}
 
 	template <typename T>
-	std::enable_if_t<std::is_pointer_v<T>, T> as()
+	std::enable_if_t<std::is_pointer_v<T>, T> as() const
 	{
 		return static_cast<T>(m_ptr);
 	}
 
 	template <typename T>
-	std::enable_if_t<std::is_lvalue_reference_v<T>, T> as()
+	std::enable_if_t<std::is_lvalue_reference_v<T>, T> as() const
 	{
 		return *static_cast<std::add_pointer_t<std::remove_reference_t<T>>>(m_ptr);
 	}
 
 	template <typename T>
-	std::enable_if_t<std::is_same_v<T, uintptr_t>, T> as()
+	std::enable_if_t<std::is_same_v<T, uintptr_t>, T> as() const
 	{
 		return reinterpret_cast<T>(m_ptr);
 	}
 
-	mem mov()
+	mem mov() const
 	{
 		return add(3).rip();
 	}
 
-	mem cmp()
+	mem cmp() const
 	{
 		return add(3).rip();
 	}
 
-	mem lea()
+	mem lea() const
 	{
 		return add(2).rip();
 	}
 
-	mem call()
+	mem call() const
 	{
 		return add(1).rip();
 	}
 
-	mem add(u64 v)
+	mem add(u64 v) const
 	{
 		return {as<u64>() + v};
 	}
 
-	mem sub(u64 v)
+	mem sub(u64 v) const
 	{
 		return {as<u64>() - v};
 	}
 
-	mem rip()
+	mem rip() const
 	{
 		return add(as<i32&>()).add(4);
 	}
 
-	operator bool()
+	operator bool() const
 	{
 		return m_ptr;
 	}
