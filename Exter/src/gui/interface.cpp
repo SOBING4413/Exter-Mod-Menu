@@ -215,7 +215,7 @@ namespace ui
 			void check_if_pressed(bool& value, int padIdx, int key, int keyboardKey, size_t delay)
 			{
 				static timer t;
-				if (GetForegroundWindow() != pointers::g_hwnd)
+				if (pointers::g_hwnd && GetForegroundWindow() != pointers::g_hwnd)
 					return;
 
 				bool key_pressed = GetAsyncKeyState(keyboardKey) & 1;
@@ -241,7 +241,7 @@ namespace ui
 			void check_if_pressed(bool& value, int padIdx, int key, int key2, int keyboardKey, size_t delay)
 			{
 				static timer t;
-				if (GetForegroundWindow() != pointers::g_hwnd)
+				if (pointers::g_hwnd && GetForegroundWindow() != pointers::g_hwnd)
 					return;
 
 				bool key_pressed = GetAsyncKeyState(keyboardKey) & 1;
