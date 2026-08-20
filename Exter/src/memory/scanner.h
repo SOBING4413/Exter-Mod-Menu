@@ -22,21 +22,33 @@ inline std::optional<u8> charToHex(cc c)
 inline std::vector<std::optional<u8>> createBytesFromString(const std::string& ptr)
 {
 	std::vector<std::optional<u8>> bytes{};
-	for (size_t i{}; i != ptr.size() - 1; ++i)
+	for (size_t i{}; i < ptr.size();)
 	{
-		if (ptr[i] == ' ')
-			continue;
-		if (ptr[i] != '?')
+		if (std::isspace(static_cast<unsigned char>(ptr[i])))
 		{
-			if (auto c = charToHex(ptr[i]); c)
-			{
-				if (auto c2 = charToHex(ptr[i + 1]); c2)
-					bytes.emplace_back(static_cast<uint8_t>((*c * 0x10) + *c2));
-			}
+			++i;
+			continue;
+		}
+
+		if (ptr[i] == '?')
+		{
+			bytes.emplace_back();
+			++i;
+			if (i < ptr.size() && ptr[i] == '?')
+				++i;
+			continue;
+		}
+
+		const auto high = charToHex(ptr[i]);
+		const auto low = i + 1 < ptr.size() ? charToHex(ptr[i + 1]) : std::nullopt;
+		if (high && low)
+		{
+			bytes.emplace_back(static_cast<u8>((*high << 4) | *low));
+			i += 2;
 		}
 		else
 		{
-			bytes.emplace_back();
+			++i;
 		}
 	}
 	return bytes;
@@ -54,55 +66,33 @@ inline bool doesMemoryMatch(u8* target, const std::optional<u8>* sig, u64 len)
 	return true;
 }
 
-inline u64 findPatternBruteforce(const std::vector<std::optional<u8>>& bytes, hmodule module = {})
+inline u64 findPatternBruteforce(const std::vector<std::optional<u8>>& bytes, const hmodule& module = {})
 {
-	for (u64 i{}; i != module.size() - bytes.size(); ++i)
+	if (!module.valid() || bytes.empty() || bytes.size() > module.size())
+		return NULL;
+
+	const auto scan_limit = module.size() - bytes.size();
+	for (u64 i{}; i <= scan_limit; ++i)
 	{
 		if (doesMemoryMatch(module.begin().add(i).as<u8*>(), bytes.data(), bytes.size()))
-		{
 			return module.begin().as<u64>() + i;
-		}
 	}
 	return NULL;
 }
 
-inline u64 findPatternBoyerMooreHorspool(const std::vector<std::optional<u8>>& bytes, hmodule module = {})
+inline u64 findPatternBoyerMooreHorspool(const std::vector<std::optional<u8>>& bytes, const hmodule& module = {})
 {
-	u64 maxShift{bytes.size()};
-	u64 maxIdx{maxShift - 1};
-	//Get wildcard index, and store max shifable byte count
-	u64 wildCardIdx{static_cast<u64>(-1)};
-	for (i32 i{static_cast<i32>(maxIdx - 1)}; i >= 0; --i)
+	if (!module.valid() || bytes.empty() || bytes.size() > module.size())
+		return NULL;
+
+	const auto module_begin = module.begin().as<u8*>();
+	const auto scan_limit = module.size() - bytes.size();
+	for (u64 curIdx{}; curIdx <= scan_limit; ++curIdx)
 	{
-		if (!bytes[i])
-		{
-			maxShift = maxIdx - i;
-			wildCardIdx = i;
-			break;
-		}
+		if (doesMemoryMatch(module_begin + curIdx, bytes.data(), bytes.size()))
+			return module.begin().add(curIdx).as<u64>();
 	}
-	//Store max shiftable bytes for non wildcards.
-	u64 shiftTable[UINT8_MAX + 1]{};
-	for (u64 i{}; i <= UINT8_MAX; ++i)
-		shiftTable[i] = maxShift;
-	for (u64 i{wildCardIdx + 1}; i != maxIdx; ++i)
-		shiftTable[*bytes[i]] = maxIdx - i;
-	//Loop data
-	for (u64 curIdx{}; curIdx != module.size() - bytes.size();)
-	{
-		for (u64 sigIdx = maxIdx; sigIdx >= 0; --sigIdx)
-		{
-			if (bytes[sigIdx] && *module.begin().add(curIdx + sigIdx).as<u8*>() != *bytes[sigIdx])
-			{
-				curIdx += shiftTable[*module.begin().add(curIdx + maxIdx).as<u8*>()];
-				break;
-			}
-			if (sigIdx == NULL)
-			{
-				return module.begin().add(curIdx).as<u64>();
-			}
-		}
-	}
+
 	return NULL;
 }
 
@@ -144,16 +134,18 @@ inline mem scan(const std::string& key, const std::string& ptr, const hmodule& m
 	return scanner(key, ptr, module).get();
 }
 
-inline std::vector<mem> getAllResults(const std::string& ptr, hmodule module = {})
+inline std::vector<mem> getAllResults(const std::string& ptr, const hmodule& module = {})
 {
 	std::vector bytes{createBytesFromString(ptr)};
 	std::vector<mem> results{};
-	for (u64 i{}; i != module.size() - bytes.size(); ++i)
+	if (!module.valid() || bytes.empty() || bytes.size() > module.size())
+		return results;
+
+	const auto scan_limit = module.size() - bytes.size();
+	for (u64 i{}; i <= scan_limit; ++i)
 	{
 		if (doesMemoryMatch(module.begin().add(i).as<u8*>(), bytes.data(), bytes.size()))
-		{
 			results.push_back(module.begin().add(i));
-		}
 	}
 	return results;
 }
