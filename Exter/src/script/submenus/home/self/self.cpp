@@ -1,24 +1,30 @@
 #include "self.h"
 
-#include "gui/types/vector_option.h"
+#include "rage/lists.h"
 
 namespace ui::submenus
 {
-	bool toggle;
-	int value = 1;
-
-	i64 pos = 0;
-	std::vector vector_numbers = {"One", "Two", "Three"};
-
 	void selfSubmenu::init(submenu& submenu)
 	{
-		submenu.add(toggleOption("godMode"_TC)); //Called from commands
+		submenu.add(breakOption("Survivability"));
+		submenu.add(toggleOption("godMode"_TC));
+		submenu.add(toggleOption("neverWanted"_TC));
+		submenu.add(toggleOption("noRagdoll"_TC));
+		submenu.add(toggleOption("invisible"_TC));
+		submenu.add(breakOption("Movement"));
 		submenu.add(toggleOption("beastJump"_TC));
 		submenu.add(toggleOption("gracefulLanding"_TC));
-		submenu.add(breakOption("Demo"));
-		submenu.add(option("Regular Option", [] { LOG(Info, "You pressed regular option!") }));
-		submenu.add(toggleOption("Toggle Option", "Description", toggle));
-		submenu.add(numberOption("Number Option", "Description", value, 1, 10, 1, true));
-		submenu.add(vectorOption("Vector Option", "Description", vector_numbers, pos));
+		submenu.add(toggleOption("superRun"_TC));
+		submenu.add(breakOption("Quick Actions"));
+		submenu.add(option("Heal Player", "Restores player health and armor", []
+		{
+			const auto ped{PLAYER::PLAYER_PED_ID()};
+			ENTITY::SET_ENTITY_HEALTH(ped, ENTITY::GET_ENTITY_MAX_HEALTH(ped), 0, 0);
+			PED::SET_PED_ARMOUR(ped, 100);
+		}));
+		submenu.add(option("Clear Wanted Level", "Immediately clears the current wanted level", []
+		{
+			PLAYER::CLEAR_PLAYER_WANTED_LEVEL(PLAYER::PLAYER_ID());
+		}));
 	}
 }
